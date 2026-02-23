@@ -2,11 +2,36 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>3D Viewer</title>
+<title>3D Model Viewer</title>
+
 <style>
-body{margin:0;background:#111;color:white;text-align:center;font-family:Arial}
-#upload{margin:15px;padding:12px;background:#00bcd4;color:white;border:none;border-radius:8px}
-canvas{width:100%!important;height:500px!important}
+body{
+margin:0;
+background:#0f172a;
+color:white;
+font-family:Arial;
+text-align:center;
+}
+
+h2{
+margin-top:20px;
+}
+
+#upload{
+margin:20px;
+padding:12px 18px;
+background:#06b6d4;
+border-radius:8px;
+border:none;
+color:white;
+font-size:16px;
+cursor:pointer;
+}
+
+#viewer{
+width:100%;
+height:600px;
+}
 </style>
 </head>
 
@@ -17,78 +42,83 @@ canvas{width:100%!important;height:500px!important}
 
 <div id="viewer"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/controls/OrbitControls.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/loaders/STLLoader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/loaders/OBJLoader.js"></script>
+<script type="module">
 
-<script>
+import * as THREE from 'https://unpkg.com/three@0.150.1/build/three.module.js';
+import { OrbitControls } from 'https://unpkg.com/three@0.150.1/examples/jsm/controls/OrbitControls.js';
+import { STLLoader } from 'https://unpkg.com/three@0.150.1/examples/jsm/loaders/STLLoader.js';
+import { OBJLoader } from 'https://unpkg.com/three@0.150.1/examples/jsm/loaders/OBJLoader.js';
 
-let scene=new THREE.Scene();
-let camera=new THREE.PerspectiveCamera(75,window.innerWidth/500,0.1,1000);
-let renderer=new THREE.WebGLRenderer({antialias:true});
-renderer.setSize(window.innerWidth,500);
-document.getElementById("viewer").appendChild(renderer.domElement);
+let scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0f172a);
 
-let controls=new THREE.OrbitControls(camera,renderer.domElement);
-camera.position.z=100;
-  const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
-scene.add(ambientLight);
+let camera = new THREE.PerspectiveCamera(60, window.innerWidth/600, 0.1, 10000);
+camera.position.set(120,120,120);
 
-function centerModel(object) {
-    const box = new THREE.Box3().setFromObject(object);
-    const size = box.getSize(new THREE.Vector3()).length();
-    const center = box.getCenter(new THREE.Vector3());
+let renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(window.innerWidth,600);
+document.getElementById('viewer').appendChild(renderer.domElement);
 
-    controls.reset();
+let controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
 
-    object.position.x += (object.position.x - center.x);
-    object.position.y += (object.position.y - center.y);
-    object.position.z += (object.position.z - center.z);
+const light1 = new THREE.HemisphereLight(0xffffff,0x444444,1.2);
+scene.add(light1);
 
-    camera.near = size / 100;
-    camera.far = size * 100;
-    camera.updateProjectionMatrix();
+const light2 = new THREE.DirectionalLight(0xffffff,1);
+light2.position.set(1,1,1);
+scene.add(light2);
 
-    camera.position.copy(center);
-    camera.position.x += size / 2.0;
-    camera.position.y += size / 5.0;
-    camera.position.z += size / 2.0;
-    camera.lookAt(center);
-}
+let currentModel;
 
-let light=new THREE.DirectionalLight(0xffffff,1);
-light.position.set(0,1,1);
-scene.add(light);
+document.getElementById('upload').addEventListener('change',function(e){
 
-document.getElementById("upload").addEventListener("change",function(e){
-let file=e.target.files[0];
-let url=URL.createObjectURL(file);
+if(currentModel) scene.remove(currentModel);
 
-scene.clear();
-scene.add(light);
+let file = e.target.files[0];
+let url = URL.createObjectURL(file);
 
-if(file.name.toLowerCase().endsWith(".stl")){
-let loader=new THREE.STLLoader();
+if(file.name.toLowerCase().endsWith('.stl')){
+const loader = new STLLoader();
 loader.load(url,function(geometry){
-let material=new THREE.MeshNormalMaterial();
-let mesh=new THREE.Mesh(geometry,material);
+const material = new THREE.MeshStandardMaterial({color:0x22c55e,metalness:0.1,roughness:0.6});
+const mesh = new THREE.Mesh(geometry,material);
+centerObject(mesh);
 scene.add(mesh);
-centerModel(mesh);  
+currentModel=mesh;
 });
 }
 
-if(file.name.toLowerCase().endsWith(".obj")){
-let loader=new THREE.OBJLoader();
+if(file.name.toLowerCase().endsWith('.obj')){
+const loader = new OBJLoader();
 loader.load(url,function(obj){
+centerObject(obj);
 scene.add(obj);
-centerModel(obj);
+currentModel=obj;
 });
 }
+
 });
+
+function centerObject(object){
+const box = new THREE.Box3().setFromObject(object);
+const center = box.getCenter(new THREE.Vector3());
+const size = box.getSize(new THREE.Vector3()).length();
+
+object.position.sub(center);
+
+camera.near = size/100;
+camera.far = size*100;
+camera.updateProjectionMatrix();
+
+camera.position.set(size,size,size);
+camera.lookAt(0,0,0);
+controls.update();
+}
 
 function animate(){
 requestAnimationFrame(animate);
+controls.update();
 renderer.render(scene,camera);
 }
 animate();
