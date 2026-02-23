@@ -74,6 +74,7 @@ loader.load(url,function(geometry){
 let material=new THREE.MeshNormalMaterial();
 let mesh=new THREE.Mesh(geometry,material);
 scene.add(mesh);
+centerModel(mesh);  
 });
 }
 
@@ -81,6 +82,7 @@ if(file.name.toLowerCase().endsWith(".obj")){
 let loader=new THREE.OBJLoader();
 loader.load(url,function(obj){
 scene.add(obj);
+centerModel(obj);
 });
 }
 });
