@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>3D Viewer</title>
+<style>
+body{margin:0;background:#111;color:white;text-align:center;font-family:Arial}
+#upload{margin:15px;padding:12px;background:#00bcd4;color:white;border:none;border-radius:8px}
+canvas{width:100%!important;height:500px!important}
+</style>
+</head>
+
+<body>
+
+<h2>Upload your 3D Model</h2>
+<input type="file" id="upload" accept=".stl,.obj">
+
+<div id="viewer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/loaders/STLLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/loaders/OBJLoader.js"></script>
+
+<script>
+
+let scene=new THREE.Scene();
+let camera=new THREE.PerspectiveCamera(75,window.innerWidth/500,0.1,1000);
+let renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(window.innerWidth,500);
+document.getElementById("viewer").appendChild(renderer.domElement);
+
+let controls=new THREE.OrbitControls(camera,renderer.domElement);
+camera.position.z=100;
+
+let light=new THREE.DirectionalLight(0xffffff,1);
+light.position.set(0,1,1);
+scene.add(light);
+
+document.getElementById("upload").addEventListener("change",function(e){
+let file=e.target.files[0];
+let url=URL.createObjectURL(file);
+
+scene.clear();
+scene.add(light);
+
+if(file.name.toLowerCase().endsWith(".stl")){
+let loader=new THREE.STLLoader();
+loader.load(url,function(geometry){
+let material=new THREE.MeshNormalMaterial();
+let mesh=new THREE.Mesh(geometry,material);
+scene.add(mesh);
+});
+}
+
+if(file.name.toLowerCase().endsWith(".obj")){
+let loader=new THREE.OBJLoader();
+loader.load(url,function(obj){
+scene.add(obj);
+});
+}
+});
+
+function animate(){
+requestAnimationFrame(animate);
+renderer.render(scene,camera);
+}
+animate();
+
+</script>
+</body>
+</html>
