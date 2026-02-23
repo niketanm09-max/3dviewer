@@ -32,6 +32,30 @@ document.getElementById("viewer").appendChild(renderer.domElement);
 
 let controls=new THREE.OrbitControls(camera,renderer.domElement);
 camera.position.z=100;
+  const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+scene.add(ambientLight);
+
+function centerModel(object) {
+    const box = new THREE.Box3().setFromObject(object);
+    const size = box.getSize(new THREE.Vector3()).length();
+    const center = box.getCenter(new THREE.Vector3());
+
+    controls.reset();
+
+    object.position.x += (object.position.x - center.x);
+    object.position.y += (object.position.y - center.y);
+    object.position.z += (object.position.z - center.z);
+
+    camera.near = size / 100;
+    camera.far = size * 100;
+    camera.updateProjectionMatrix();
+
+    camera.position.copy(center);
+    camera.position.x += size / 2.0;
+    camera.position.y += size / 5.0;
+    camera.position.z += size / 2.0;
+    camera.lookAt(center);
+}
 
 let light=new THREE.DirectionalLight(0xffffff,1);
 light.position.set(0,1,1);
